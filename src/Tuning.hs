@@ -3,10 +3,12 @@ module Tuning
   , TuningChart
   , toTuningChart
   , toTuning
+  , parseTuning
   ) where
 
 import           Hole (Hole (Hole))
 import           Note (Note, noteLevel, toNote)
+import qualified Data.Text as T
 
 type Tuning = [Hole]
 
@@ -24,3 +26,14 @@ toTuningChart tuning =
 toTuning :: Note -> TuningChart -> Tuning
 toTuning root chart =
   zipWith (\(b, d) i -> Hole i (toNote root b) (toNote root d)) chart [1 ..]
+
+parseLine :: T.Text -> (Int, Int)
+parseLine line = (a, b)
+  where
+    (a:b:_) = map (read . T.unpack) $ T.splitOn (T.pack ",") line
+
+parseTuningChart :: String -> TuningChart
+parseTuningChart lines = map parseLine $ T.lines $ T.pack lines
+
+parseTuning :: Note -> String -> Tuning
+parseTuning note = toTuning note . parseTuningChart

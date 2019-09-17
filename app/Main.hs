@@ -1,23 +1,20 @@
 module Main where
 
-import qualified Data.Text as T
+import           Action             (findAction)
+import qualified Data.Text          as T
 import           Lib
-import           Note      (Note (Note), NoteName (..))
+import           Note               (Note (Note), NoteName (..), parseNotes)
+import           System.Environment
 import           System.IO
-import           Tuning    (TuningChart, toTuning)
-
-parseLine :: T.Text -> (Int, Int)
-parseLine line = (a, b)
-  where
-    (a:b:_) = map (read . T.unpack) $ T.splitOn (T.pack ",") line
-
-parse :: String -> TuningChart
-parse lines = map parseLine $ T.lines $ T.pack lines
+import           Tuning             (TuningChart, parseTuning)
 
 main = do
-  handle <- openFile "tunings/richter.txt" ReadMode
+  args <- getArgs
+  let (tuningFile:noteString:_) = args
+  handle <- openFile ("tunings/" ++ tuningFile ++ ".txt") ReadMode
   contents <- hGetContents handle
-  let chart = parse contents
-  let tuning = toTuning (Note 4 C) chart
-  print tuning
+  let tuning = parseTuning (Note 4 C) contents
+  let notes = parseNotes noteString
+  let tab = map (findAction tuning) notes
+  print tab
   return ""
