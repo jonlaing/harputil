@@ -2,6 +2,7 @@ module Note
   ( NoteName(..)
   , Note(Note)
   , noteLevel
+  , noteDifference
   , toNote
   , parseNote
   , parseNotes
@@ -32,14 +33,22 @@ data Note =
 noteLevel :: Note -> Int
 noteLevel (Note n note) = fromEnum note + (12 * n)
 
+noteDifference :: Note -> Note -> Int
+noteDifference a b = abs $ noteLevel a - noteLevel b
+
 toNote :: Note -> Int -> Note
 toNote (Note n note) i =
-  Note (((i + n) `div` 12) + fromEnum note) (toEnum (mod (n + i) 12))
+  Note
+    (((i + fromEnum note) `div` 12) + n)
+    (toEnum (mod (fromEnum note + i) 12))
 
-parseNote :: String -> Note
-parseNote s = Note (read noteLevel :: Int) (read noteName :: NoteName)
-  where
-    (noteName:noteLevel:_) = map T.unpack $ T.splitOn (T.pack ",") (T.pack s)
+parseNote :: String -> Maybe Note
+parseNote "" = Nothing
+parseNote s =
+  case map T.unpack $ T.splitOn (T.pack ",") (T.pack s) of
+    (noteName:noteLevel:_) ->
+      Just $ Note (read noteLevel :: Int) (read noteName :: NoteName)
+    _ -> Nothing
 
-parseNotes :: String -> [Note]
-parseNotes s = map (parseNote . T.unpack) $ T.splitOn (T.pack " ") (T.pack s)
+parseNotes :: String -> Maybe [Note]
+parseNotes s = mapM (parseNote . T.unpack) $ T.splitOn (T.pack " ") (T.pack s)

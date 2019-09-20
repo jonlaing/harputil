@@ -4,11 +4,12 @@ module Tuning
   , toTuningChart
   , toTuning
   , parseTuning
+  , parseLine
   ) where
 
-import           Hole (Hole (Hole))
-import           Note (Note, noteLevel, toNote)
 import qualified Data.Text as T
+import           Hole      (Hole (Hole))
+import           Note      (Note, noteLevel, toNote)
 
 type Tuning = [Hole]
 
@@ -27,13 +28,15 @@ toTuning :: Note -> TuningChart -> Tuning
 toTuning root chart =
   zipWith (\(b, d) i -> Hole i (toNote root b) (toNote root d)) chart [1 ..]
 
-parseLine :: T.Text -> (Int, Int)
-parseLine line = (a, b)
-  where
-    (a:b:_) = map (read . T.unpack) $ T.splitOn (T.pack ",") line
+parseLine :: T.Text -> Maybe (Int, Int)
+parseLine line =
+  case map (read . T.unpack) $ T.splitOn (T.pack ",") line of
+    (a:b:_) -> Just (a, b)
+    _       -> Nothing
 
-parseTuningChart :: String -> TuningChart
-parseTuningChart lines = map parseLine $ T.lines $ T.pack lines
+parseTuningChart :: String -> Maybe TuningChart
+parseTuningChart ""    = Nothing
+parseTuningChart lines = mapM parseLine $ T.lines $ T.pack lines
 
-parseTuning :: Note -> String -> Tuning
-parseTuning note = toTuning note . parseTuningChart
+parseTuning :: Note -> String -> Maybe Tuning
+parseTuning note lines = toTuning note <$> parseTuningChart lines

@@ -1,16 +1,17 @@
 module Action
-  ( Bend
-  , Breath
-  , HoleAction
+  ( Bend(..)
+  , Breath(..)
+  , HoleAction(..)
   , bendLevel
   , breath
   , action
   , findAction
   ) where
 
-import           Hole   (Blow, Draw, Hole (Hole), HoleNumber, holeNumber)
-import           Note   (Note, noteLevel)
-import           Tuning (Tuning)
+import           Data.Maybe (mapMaybe)
+import           Hole       (Blow, Draw, Hole (Hole), HoleNumber, holeNumber)
+import           Note       (Note, noteDifference, noteLevel)
+import           Tuning     (Tuning)
 
 newtype Bend =
   Bend Int
@@ -44,10 +45,14 @@ instance Ord HoleAction where
     compare (abs a) (abs b)
 
 -- assumes the hole contains the note
-bendLevel :: Note -> Hole -> Bend
+bendLevel :: Note -> Hole -> Maybe Bend
 bendLevel note (Hole _ blow draw)
-  | note == blow || note == draw = Bend 0
-  | otherwise = Bend $ noteLevel (max blow draw) - noteLevel note
+  | note == blow || note == draw = Just $ Bend 0
+  | otherwise =
+    let level = noteLevel (max blow draw) - noteLevel note
+     in if level > -2 && level < noteDifference blow draw
+          then Just $ Bend level
+          else Nothing
 
 breath :: Note -> Hole -> Breath
 breath note (Hole _ b d)
@@ -60,9 +65,14 @@ breath note (Hole _ b d)
       then Draw
       else Blow
 
-action :: Note -> Hole -> HoleAction
+action :: Note -> Hole -> Maybe HoleAction
 action note hole =
-  HoleAction (holeNumber hole) (breath note hole) (bendLevel note hole)
+  case bendLevel note hole of
+    Just b  -> Just $ HoleAction (holeNumber hole) (breath note hole) b
+    Nothing -> Nothing
 
-findAction :: Tuning -> Note -> HoleAction
-findAction tuning note = minimum $ map (action note) tuning
+findAction :: Tuning -> Note -> Maybe HoleAction
+findAction tuning note =
+  case mapMaybe (action note) tuning of
+    [] -> Nothing
+    xs -> Just $ minimum xs

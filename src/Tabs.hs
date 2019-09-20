@@ -1,5 +1,5 @@
 module Tabs
-  ( Tabs
+  ( Tabs(..)
   , parseTabs
   ) where
 
@@ -9,5 +9,5 @@ import           Tuning (Tuning)
 
 type Tabs = [HoleAction]
 
-parseTabs :: Tuning -> [Note] -> Tabs
-parseTabs tuning = map $ findAction tuning
+parseTabs :: Tuning -> [Note] -> Maybe Tabs
+parseTabs tuning = mapM (findAction tuning)
